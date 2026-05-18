@@ -1,17 +1,19 @@
 import streamlit as st
 import pandas as pd
+import plotly.express as px
 import os
 
 # =====================================
 # CONFIG
 # =====================================
 st.set_page_config(
-    page_title="Aplikasi Penilaian Siswa",
+    page_title="Sistem Penilaian Siswa",
     page_icon="🎓",
     layout="wide"
 )
 
 FILE_DATA = "data_siswa.csv"
+FILE_USER = "users.csv"
 
 # =====================================
 # LOAD DATA
@@ -36,7 +38,52 @@ def save_data(df):
     df.to_csv(FILE_DATA, index=False)
 
 # =====================================
-# LOAD AWAL
+# LOGIN
+# =====================================
+def check_login(username, password):
+
+    users = pd.read_csv(FILE_USER)
+
+    user = users[
+        (users["username"] == username) &
+        (users["password"] == password)
+    ]
+
+    return len(user) > 0
+
+# =====================================
+# SESSION LOGIN
+# =====================================
+if "login" not in st.session_state:
+    st.session_state.login = False
+
+# =====================================
+# LOGIN PAGE
+# =====================================
+if not st.session_state.login:
+
+    st.title("🔐 LOGIN GURU")
+
+    username = st.text_input("Username")
+    password = st.text_input(
+        "Password",
+        type="password"
+    )
+
+    if st.button("LOGIN"):
+
+        if check_login(username, password):
+            st.session_state.login = True
+            st.success("Login berhasil")
+            st.rerun()
+
+        else:
+            st.error("Username/password salah")
+
+    st.stop()
+
+# =====================================
+# LOAD DATA
 # =====================================
 df = load_data()
 
@@ -53,14 +100,14 @@ st.markdown("""
 .title {
     font-size: 38px;
     font-weight: bold;
-    color: #1e3a8a;
+    color: #1d4ed8;
 }
 
 .card {
     background: white;
     padding: 20px;
     border-radius: 15px;
-    box-shadow: 0px 3px 10px rgba(0,0,0,0.1);
+    box-shadow: 0px 3px 12px rgba(0,0,0,0.1);
     margin-bottom: 20px;
 }
 
@@ -71,28 +118,70 @@ st.markdown("""
 # TITLE
 # =====================================
 st.markdown(
-    '<p class="title">🎓 Aplikasi Penilaian Siswa SMA</p>',
+    '<p class="title">🎓 Sistem Penilaian Siswa SMA</p>',
     unsafe_allow_html=True
 )
 
 # =====================================
-# MENU
+# SIDEBAR
 # =====================================
 menu = st.sidebar.radio(
     "Menu",
     [
+        "🏠 Dashboard",
         "📋 Data Siswa",
         "➕ Tambah Data",
         "✏ Edit Data",
         "❌ Hapus Data",
-        "📤 Export Excel"
+        "📊 Ranking",
+        "📈 Grafik Nilai",
+        "📤 Export Excel",
+        "📥 Upload Excel",
+        "🚪 Logout"
     ]
 )
 
 # =====================================
-# TAMPIL DATA
+# DASHBOARD
 # =====================================
-if menu == "📋 Data Siswa":
+if menu == "🏠 Dashboard":
+
+    st.subheader("Dashboard")
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        st.markdown(f"""
+        <div class="card">
+        <h3>Total Siswa</h3>
+        <h1>{len(df)}</h1>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col2:
+        rata = 0 if len(df)==0 else round(df["Nilai"].mean(),2)
+
+        st.markdown(f"""
+        <div class="card">
+        <h3>Rata-rata Nilai</h3>
+        <h1>{rata}</h1>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col3:
+        tertinggi = 0 if len(df)==0 else df["Nilai"].max()
+
+        st.markdown(f"""
+        <div class="card">
+        <h3>Nilai Tertinggi</h3>
+        <h1>{tertinggi}</h1>
+        </div>
+        """, unsafe_allow_html=True)
+
+# =====================================
+# DATA SISWA
+# =====================================
+elif menu == "📋 Data Siswa":
 
     st.subheader("Data Penilaian Siswa")
 
@@ -106,18 +195,17 @@ if menu == "📋 Data Siswa":
 # =====================================
 elif menu == "➕ Tambah Data":
 
-    st.subheader("Tambah Data Siswa")
+    st.subheader("Tambah Data")
 
     with st.form("form_tambah"):
 
         nis = st.text_input("NIS")
-        nama = st.text_input("Nama Siswa")
+        nama = st.text_input("Nama")
         kelas = st.selectbox(
             "Kelas",
-            ["X", "XI", "XII"]
+            ["X","XI","XII"]
         )
-
-        mapel = st.text_input("Mata Pelajaran")
+        mapel = st.text_input("Mapel")
 
         nilai = st.number_input(
             "Nilai",
@@ -130,15 +218,15 @@ elif menu == "➕ Tambah Data":
         if submit:
 
             data_baru = pd.DataFrame({
-                "NIS": [nis],
-                "Nama": [nama],
-                "Kelas": [kelas],
-                "Mapel": [mapel],
-                "Nilai": [nilai]
+                "NIS":[nis],
+                "Nama":[nama],
+                "Kelas":[kelas],
+                "Mapel":[mapel],
+                "Nilai":[nilai]
             })
 
             df = pd.concat(
-                [df, data_baru],
+                [df,data_baru],
                 ignore_index=True
             )
 
@@ -147,7 +235,7 @@ elif menu == "➕ Tambah Data":
             st.success("Data berhasil ditambahkan")
 
 # =====================================
-# EDIT DATA
+# EDIT
 # =====================================
 elif menu == "✏ Edit Data":
 
@@ -155,83 +243,125 @@ elif menu == "✏ Edit Data":
 
     if len(df) > 0:
 
-        pilih_nis = st.selectbox(
+        pilih = st.selectbox(
             "Pilih NIS",
             df["NIS"]
         )
 
-        index = df[df["NIS"] == pilih_nis].index[0]
+        index = df[
+            df["NIS"] == pilih
+        ].index[0]
 
-        with st.form("form_edit"):
+        with st.form("edit_form"):
 
             nama = st.text_input(
                 "Nama",
-                df.loc[index, "Nama"]
+                df.loc[index,"Nama"]
             )
 
             kelas = st.selectbox(
                 "Kelas",
-                ["X", "XI", "XII"],
-                index=["X","XI","XII"].index(
-                    df.loc[index, "Kelas"]
-                )
+                ["X","XI","XII"]
             )
 
             mapel = st.text_input(
                 "Mapel",
-                df.loc[index, "Mapel"]
+                df.loc[index,"Mapel"]
             )
 
             nilai = st.number_input(
                 "Nilai",
                 0,
                 100,
-                int(df.loc[index, "Nilai"])
+                int(df.loc[index,"Nilai"])
             )
 
-            update = st.form_submit_button("Update")
+            update = st.form_submit_button(
+                "Update"
+            )
 
             if update:
 
-                df.loc[index, "Nama"] = nama
-                df.loc[index, "Kelas"] = kelas
-                df.loc[index, "Mapel"] = mapel
-                df.loc[index, "Nilai"] = nilai
+                df.loc[index,"Nama"] = nama
+                df.loc[index,"Kelas"] = kelas
+                df.loc[index,"Mapel"] = mapel
+                df.loc[index,"Nilai"] = nilai
 
                 save_data(df)
 
                 st.success("Data berhasil diupdate")
 
 # =====================================
-# HAPUS DATA
+# HAPUS
 # =====================================
 elif menu == "❌ Hapus Data":
 
     st.subheader("Hapus Data")
 
-    if len(df) > 0:
+    pilih = st.selectbox(
+        "Pilih NIS",
+        df["NIS"]
+    )
 
-        pilih_nis = st.selectbox(
-            "Pilih NIS",
-            df["NIS"]
-        )
+    if st.button("Hapus"):
 
-        if st.button("Hapus"):
+        df = df[
+            df["NIS"] != pilih
+        ]
 
-            df = df[df["NIS"] != pilih_nis]
+        save_data(df)
 
-            save_data(df)
+        st.success("Data berhasil dihapus")
 
-            st.success("Data berhasil dihapus")
+# =====================================
+# RANKING
+# =====================================
+elif menu == "📊 Ranking":
+
+    st.subheader("Ranking Siswa")
+
+    ranking = df.sort_values(
+        by="Nilai",
+        ascending=False
+    )
+
+    ranking["Ranking"] = range(
+        1,
+        len(ranking)+1
+    )
+
+    st.dataframe(
+        ranking,
+        use_container_width=True
+    )
+
+# =====================================
+# GRAFIK
+# =====================================
+elif menu == "📈 Grafik Nilai":
+
+    st.subheader("Grafik Nilai Siswa")
+
+    fig = px.bar(
+        df,
+        x="Nama",
+        y="Nilai",
+        color="Kelas"
+    )
+
+    st.plotly_chart(
+        fig,
+        use_container_width=True
+    )
 
 # =====================================
 # EXPORT EXCEL
 # =====================================
 elif menu == "📤 Export Excel":
 
-    st.subheader("Export Data ke Excel")
+    st.subheader("Export Excel")
 
-    file_excel = "data_penilaian_siswa.xlsx"
+    file_excel = "nilai_siswa.xlsx"
 
     df.to_excel(
         file_excel,
@@ -247,4 +377,36 @@ elif menu == "📤 Export Excel":
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
 
-    st.success("File Excel siap didownload")
+# =====================================
+# UPLOAD EXCEL
+# =====================================
+elif menu == "📥 Upload Excel":
+
+    st.subheader("Upload Excel")
+
+    uploaded = st.file_uploader(
+        "Upload File Excel",
+        type=["xlsx"]
+    )
+
+    if uploaded:
+
+        data_upload = pd.read_excel(
+            uploaded
+        )
+
+        st.dataframe(data_upload)
+
+        if st.button("Simpan Data Upload"):
+
+            save_data(data_upload)
+
+            st.success("Data berhasil diupload")
+
+# =====================================
+# LOGOUT
+# =====================================
+elif menu == "🚪 Logout":
+
+    st.session_state.login = False
+    st.rerun()
