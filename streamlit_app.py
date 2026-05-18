@@ -1,281 +1,250 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
-import plotly.express as px
-import pymysql
-import time
+import os
 
-# =========================================
-# PAGE CONFIG
-# =========================================
+# =====================================
+# CONFIG
+# =====================================
 st.set_page_config(
-    page_title="Premium Kasir Dashboard",
-    page_icon="💎",
+    page_title="Aplikasi Penilaian Siswa",
+    page_icon="🎓",
     layout="wide"
 )
 
-# =========================================
-# CUSTOM CSS
-# =========================================
+FILE_DATA = "data_siswa.csv"
+
+# =====================================
+# LOAD DATA
+# =====================================
+def load_data():
+    if os.path.exists(FILE_DATA):
+        return pd.read_csv(FILE_DATA)
+    else:
+        df = pd.DataFrame(columns=[
+            "NIS",
+            "Nama",
+            "Kelas",
+            "Mapel",
+            "Nilai"
+        ])
+        return df
+
+# =====================================
+# SAVE DATA
+# =====================================
+def save_data(df):
+    df.to_csv(FILE_DATA, index=False)
+
+# =====================================
+# LOAD AWAL
+# =====================================
+df = load_data()
+
+# =====================================
+# CSS MODERN
+# =====================================
 st.markdown("""
 <style>
 
-/* Background */
 .stApp {
-    background: #0f172a;
-    color: white;
+    background-color: #f4f6f9;
 }
 
-/* Sidebar */
-section[data-testid="stSidebar"] {
-    background: linear-gradient(180deg,#111827,#1e293b);
-    animation: fadeIn 1s ease-in;
-}
-
-/* Card */
-.card {
-    background: #1e293b;
-    padding: 25px;
-    border-radius: 18px;
-    box-shadow: 0px 4px 20px rgba(0,0,0,0.4);
-    transition: 0.3s;
-}
-
-.card:hover {
-    transform: scale(1.02);
-}
-
-/* Navbar */
-.navbar {
-    background: linear-gradient(90deg,#2563eb,#7c3aed);
-    padding: 15px;
-    border-radius: 15px;
-    margin-bottom: 20px;
-    text-align: center;
-    font-size: 28px;
+.title {
+    font-size: 38px;
     font-weight: bold;
-    color: white;
+    color: #1e3a8a;
 }
 
-/* Animation */
-@keyframes fadeIn {
-    from {opacity:0;}
-    to {opacity:1;}
+.card {
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0px 3px 10px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
 }
 
 </style>
 """, unsafe_allow_html=True)
 
-# =========================================
-# LOGIN SYSTEM
-# =========================================
-USERNAME = "admin"
-PASSWORD = "123"
+# =====================================
+# TITLE
+# =====================================
+st.markdown(
+    '<p class="title">🎓 Aplikasi Penilaian Siswa SMA</p>',
+    unsafe_allow_html=True
+)
 
-if "login" not in st.session_state:
-    st.session_state.login = False
-
-if not st.session_state.login:
-
-    st.title("🔐 Login Kasir")
-
-    username = st.text_input("Username")
-    password = st.text_input("Password", type="password")
-
-    if st.button("LOGIN"):
-
-        if username == USERNAME and password == PASSWORD:
-            st.session_state.login = True
-            st.rerun()
-        else:
-            st.error("Username / Password salah")
-
-    st.stop()
-
-# =========================================
-# NAVBAR
-# =========================================
-st.markdown("""
-<div class="navbar">
-💎 PREMIUM KASIR DASHBOARD
-</div>
-""", unsafe_allow_html=True)
-
-# =========================================
-# SIDEBAR MENU
-# =========================================
+# =====================================
+# MENU
+# =====================================
 menu = st.sidebar.radio(
-    "MENU",
+    "Menu",
     [
-        "🏠 Dashboard",
-        "🛒 Kasir",
-        "📊 Analytics",
-        "📂 Upload File",
-        "🤖 AI Chatbot",
-        "🗄 Database"
+        "📋 Data Siswa",
+        "➕ Tambah Data",
+        "✏ Edit Data",
+        "❌ Hapus Data",
+        "📤 Export Excel"
     ]
 )
 
-# =========================================
-# DASHBOARD
-# =========================================
-if menu == "🏠 Dashboard":
+# =====================================
+# TAMPIL DATA
+# =====================================
+if menu == "📋 Data Siswa":
 
-    st.title("Dashboard")
+    st.subheader("Data Penilaian Siswa")
 
-    col1, col2, col3, col4 = st.columns(4)
-
-    with col1:
-        st.markdown("""
-        <div class="card">
-        <h3>Total Produk</h3>
-        <h1>120</h1>
-        </div>
-        """, unsafe_allow_html=True)
-
-    with col2:
-        st.markdown("""
-        <div class="card">
-        <h3>Total Penjualan</h3>
-        <h1>Rp 12 Jt</h1>
-        </div>
-        """, unsafe_allow_html=True)
-
-    with col3:
-        st.markdown("""
-        <div class="card">
-        <h3>Total Customer</h3>
-        <h1>340</h1>
-        </div>
-        """, unsafe_allow_html=True)
-
-    with col4:
-        st.markdown("""
-        <div class="card">
-        <h3>Total Transaksi</h3>
-        <h1>890</h1>
-        </div>
-        """, unsafe_allow_html=True)
-
-# =========================================
-# KASIR
-# =========================================
-elif menu == "🛒 Kasir":
-
-    st.title("Menu Kasir")
-
-    produk = st.selectbox(
-        "Pilih Produk",
-        ["Laptop", "Mouse", "Keyboard"]
+    st.dataframe(
+        df,
+        use_container_width=True
     )
 
-    qty = st.number_input("Jumlah", 1, 100)
+# =====================================
+# TAMBAH DATA
+# =====================================
+elif menu == "➕ Tambah Data":
 
-    harga = {
-        "Laptop": 7000000,
-        "Mouse": 100000,
-        "Keyboard": 250000
-    }
+    st.subheader("Tambah Data Siswa")
 
-    total = harga[produk] * qty
+    with st.form("form_tambah"):
 
-    st.success(f"Total Bayar : Rp {total:,}")
+        nis = st.text_input("NIS")
+        nama = st.text_input("Nama Siswa")
+        kelas = st.selectbox(
+            "Kelas",
+            ["X", "XI", "XII"]
+        )
 
-    if st.button("Simpan Transaksi"):
-        st.success("Transaksi berhasil disimpan")
+        mapel = st.text_input("Mata Pelajaran")
 
-# =========================================
-# ANALYTICS
-# =========================================
-elif menu == "📊 Analytics":
+        nilai = st.number_input(
+            "Nilai",
+            0,
+            100
+        )
 
-    st.title("Realtime Analytics")
+        submit = st.form_submit_button("Simpan")
 
-    chart_data = pd.DataFrame(
-        np.random.randn(20, 3),
-        columns=['Penjualan', 'Profit', 'Customer']
-    )
+        if submit:
 
-    st.line_chart(chart_data)
+            data_baru = pd.DataFrame({
+                "NIS": [nis],
+                "Nama": [nama],
+                "Kelas": [kelas],
+                "Mapel": [mapel],
+                "Nilai": [nilai]
+            })
 
-    # Plotly Chart
-    data = pd.DataFrame({
-        "Bulan": ["Jan","Feb","Mar","Apr","Mei"],
-        "Penjualan": [10,20,15,30,40]
-    })
-
-    fig = px.bar(
-        data,
-        x="Bulan",
-        y="Penjualan",
-        color="Penjualan"
-    )
-
-    st.plotly_chart(fig, use_container_width=True)
-
-# =========================================
-# UPLOAD FILE
-# =========================================
-elif menu == "📂 Upload File":
-
-    st.title("Upload Excel & PDF")
-
-    uploaded = st.file_uploader(
-        "Upload File",
-        type=["xlsx", "pdf"]
-    )
-
-    if uploaded:
-
-        st.success("File berhasil diupload")
-
-        if uploaded.name.endswith(".xlsx"):
-            df = pd.read_excel(uploaded)
-            st.dataframe(df)
-
-# =========================================
-# AI CHATBOT
-# =========================================
-elif menu == "🤖 AI Chatbot":
-
-    st.title("AI Chatbot")
-
-    pertanyaan = st.text_input("Tanya AI")
-
-    if pertanyaan:
-
-        jawaban = f"""
-        Anda bertanya:
-        {pertanyaan}
-
-        Ini jawaban AI sederhana menggunakan Streamlit.
-        """
-
-        st.info(jawaban)
-
-# =========================================
-# MYSQL DATABASE
-# =========================================
-elif menu == "🗄 Database":
-
-    st.title("Koneksi MySQL")
-
-    host = st.text_input("Host", "localhost")
-    user = st.text_input("User", "root")
-    password = st.text_input("Password", type="password")
-    database = st.text_input("Database")
-
-    if st.button("Connect"):
-
-        try:
-            conn = pymysql.connect(
-                host=host,
-                user=user,
-                password=password,
-                database=database
+            df = pd.concat(
+                [df, data_baru],
+                ignore_index=True
             )
 
-            st.success("Berhasil connect MySQL")
+            save_data(df)
 
-        except Exception as e:
-            st.error(e)
+            st.success("Data berhasil ditambahkan")
+
+# =====================================
+# EDIT DATA
+# =====================================
+elif menu == "✏ Edit Data":
+
+    st.subheader("Edit Data")
+
+    if len(df) > 0:
+
+        pilih_nis = st.selectbox(
+            "Pilih NIS",
+            df["NIS"]
+        )
+
+        index = df[df["NIS"] == pilih_nis].index[0]
+
+        with st.form("form_edit"):
+
+            nama = st.text_input(
+                "Nama",
+                df.loc[index, "Nama"]
+            )
+
+            kelas = st.selectbox(
+                "Kelas",
+                ["X", "XI", "XII"],
+                index=["X","XI","XII"].index(
+                    df.loc[index, "Kelas"]
+                )
+            )
+
+            mapel = st.text_input(
+                "Mapel",
+                df.loc[index, "Mapel"]
+            )
+
+            nilai = st.number_input(
+                "Nilai",
+                0,
+                100,
+                int(df.loc[index, "Nilai"])
+            )
+
+            update = st.form_submit_button("Update")
+
+            if update:
+
+                df.loc[index, "Nama"] = nama
+                df.loc[index, "Kelas"] = kelas
+                df.loc[index, "Mapel"] = mapel
+                df.loc[index, "Nilai"] = nilai
+
+                save_data(df)
+
+                st.success("Data berhasil diupdate")
+
+# =====================================
+# HAPUS DATA
+# =====================================
+elif menu == "❌ Hapus Data":
+
+    st.subheader("Hapus Data")
+
+    if len(df) > 0:
+
+        pilih_nis = st.selectbox(
+            "Pilih NIS",
+            df["NIS"]
+        )
+
+        if st.button("Hapus"):
+
+            df = df[df["NIS"] != pilih_nis]
+
+            save_data(df)
+
+            st.success("Data berhasil dihapus")
+
+# =====================================
+# EXPORT EXCEL
+# =====================================
+elif menu == "📤 Export Excel":
+
+    st.subheader("Export Data ke Excel")
+
+    file_excel = "data_penilaian_siswa.xlsx"
+
+    df.to_excel(
+        file_excel,
+        index=False
+    )
+
+    with open(file_excel, "rb") as file:
+
+        st.download_button(
+            label="⬇ Download Excel",
+            data=file,
+            file_name=file_excel,
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+
+    st.success("File Excel siap didownload")
