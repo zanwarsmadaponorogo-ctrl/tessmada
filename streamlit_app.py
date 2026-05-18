@@ -1,38 +1,26 @@
 import streamlit as st
+import pandas as pd
+import numpy as np
 
-# ======================
-# CONFIG PAGE
-# ======================
+# ==================================
+# PAGE CONFIG
+# ==================================
 st.set_page_config(
-    page_title="Website Saya",
+    page_title="Admin Dashboard",
     page_icon="🚀",
     layout="wide"
 )
 
-# ======================
+# ==================================
 # CUSTOM CSS
-# ======================
+# ==================================
 st.markdown("""
 <style>
-/* Background */
+
+/* Main Background */
 .stApp {
-    background-color: #f5f7fa;
-}
-
-/* Title */
-.main-title {
-    font-size: 40px;
-    font-weight: bold;
-    color: #1f2937;
-}
-
-/* Card */
-.card {
-    background-color: white;
-    padding: 25px;
-    border-radius: 15px;
-    box-shadow: 0px 4px 15px rgba(0,0,0,0.1);
-    margin-bottom: 20px;
+    background-color: #0f172a;
+    color: white;
 }
 
 /* Sidebar */
@@ -40,33 +28,51 @@ section[data-testid="stSidebar"] {
     background-color: #111827;
 }
 
-section[data-testid="stSidebar"] .css-1d391kg {
+/* Card */
+.card {
+    background: #1e293b;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0px 4px 10px rgba(0,0,0,0.3);
+    text-align: center;
+}
+
+/* Title */
+.title {
+    font-size: 40px;
+    font-weight: bold;
     color: white;
 }
+
+/* Text */
+.small-text {
+    color: #94a3b8;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
-# ======================
-# SIDEBAR MENU
-# ======================
-st.sidebar.title("📌 Menu")
+# ==================================
+# SIDEBAR
+# ==================================
+st.sidebar.title("📌 MENU")
 
 menu = st.sidebar.radio(
     "Navigasi",
-    ["🏠 Home", "📖 Tentang"]
+    ["🏠 Home", "📊 Dashboard", "📖 Tentang"]
 )
 
-# ======================
-# HOME PAGE
-# ======================
+# ==================================
+# HOME
+# ==================================
 if menu == "🏠 Home":
 
     st.markdown(
-        '<p class="main-title">Dashboard Home</p>',
+        '<p class="title">🚀 Home Page</p>',
         unsafe_allow_html=True
     )
 
-    st.write("Selamat datang di aplikasi modern Streamlit 🚀")
+    st.write("Selamat datang di aplikasi dashboard modern.")
 
     col1, col2, col3 = st.columns(3)
 
@@ -74,59 +80,73 @@ if menu == "🏠 Home":
         st.markdown("""
         <div class="card">
             <h3>👥 Users</h3>
-            <h1>1,250</h1>
-            <p>Total pengguna</p>
+            <h1>2,540</h1>
+            <p class="small-text">Total pengguna</p>
         </div>
         """, unsafe_allow_html=True)
 
     with col2:
         st.markdown("""
         <div class="card">
-            <h3>💰 Pendapatan</h3>
-            <h1>Rp 12 Jt</h1>
-            <p>Bulan ini</p>
+            <h3>💰 Revenue</h3>
+            <h1>Rp 24 Jt</h1>
+            <p class="small-text">Pendapatan bulan ini</p>
         </div>
         """, unsafe_allow_html=True)
 
     with col3:
         st.markdown("""
         <div class="card">
-            <h3>📦 Produk</h3>
-            <h1>320</h1>
-            <p>Total produk</p>
+            <h3>📦 Orders</h3>
+            <h1>1,240</h1>
+            <p class="small-text">Total pesanan</p>
         </div>
         """, unsafe_allow_html=True)
 
-    st.markdown("""
-    <div class="card">
-        <h3>📊 Statistik</h3>
-        <p>Contoh dashboard modern menggunakan Streamlit.</p>
-    </div>
-    """, unsafe_allow_html=True)
+# ==================================
+# DASHBOARD
+# ==================================
+elif menu == "📊 Dashboard":
 
-# ======================
-# ABOUT PAGE
-# ======================
+    st.markdown(
+        '<p class="title">📊 Analytics Dashboard</p>',
+        unsafe_allow_html=True
+    )
+
+    # DATA RANDOM
+    data = pd.DataFrame({
+        "Bulan": ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun"],
+        "Penjualan": np.random.randint(10, 100, 6)
+    })
+
+    st.subheader("Grafik Penjualan")
+
+    st.line_chart(
+        data.set_index("Bulan")
+    )
+
+    st.subheader("Data Penjualan")
+
+    st.dataframe(data, use_container_width=True)
+
+# ==================================
+# ABOUT
+# ==================================
 elif menu == "📖 Tentang":
 
     st.markdown(
-        '<p class="main-title">Tentang Aplikasi</p>',
+        '<p class="title">📖 Tentang</p>',
         unsafe_allow_html=True
     )
 
     st.markdown("""
     <div class="card">
-        <h3>🚀 Deskripsi</h3>
+        <h3>🚀 Aplikasi Streamlit</h3>
         <p>
-        Aplikasi ini dibuat menggunakan Streamlit dengan tampilan modern.
-        Cocok untuk dashboard, AI app, data science, dan web internal.
+        Dashboard ini dibuat menggunakan Streamlit dengan desain modern,
+        dark mode, dan tampilan profesional.
         </p>
     </div>
     """, unsafe_allow_html=True)
 
-    st.image(
-        "https://streamlit.io/images/brand/streamlit-logo-primary-colormark-darktext.png",
-        width=250
-    )
-
-    st.success("Aplikasi berhasil dibuat 🎉")
+    st.info("Versi aplikasi: 1.0")
