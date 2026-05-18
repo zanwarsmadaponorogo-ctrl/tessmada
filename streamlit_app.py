@@ -220,6 +220,7 @@ elif menu == "➕ Tambah Data":
             data_baru = pd.DataFrame({
                 "NIS":[nis],
                 "Nama":[nama],
+                "Jenkel":[jenkel]
                 "Kelas":[kelas],
                 "Mapel":[mapel],
                 "Nilai":[nilai]
